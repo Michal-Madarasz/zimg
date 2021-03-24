@@ -15,6 +15,8 @@ if __name__ == '__main__':
 
     selector.fit_transform(data[predictors], data["Inflammation"])
     scores = -np.log10(selector.pvalues_)
+    scores.sort()
+    scores = scores[::-1]
     print(selector)
     print(scores)
 
