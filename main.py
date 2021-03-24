@@ -8,7 +8,6 @@ from names_dict import FEATURES
 if __name__ == '__main__':
     data = pd.read_csv("./data/prepared_data/diagnosis.csv", encoding='UTF-16')
 
-    replace_data = ["Nausea", "LumberPain", "ConUrine", "MictPains", "UrethraBurn", "Inflammation", "Nephritis"]
     predictors = dict(FEATURES[1:])
 
     selector = SelectKBest(f_classif, k=3)
