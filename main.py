@@ -10,6 +10,7 @@ from names_dict import COLUMNS
 
 alfa = .05
 
+
 def rebuild_table(tmp_data):
     predictors = COLUMNS[1:]
     for i in predictors:
@@ -72,9 +73,6 @@ if __name__ == '__main__':
 
     print("t_statistic:\n", t_statistic_table)
     print("p_value:\n", p_value_table)
-
-    headers = ['1n_eu','5n_eu','10n_eu','1n_man','5n_man','10n_man']
-    names_column = np.array([['1n_eu'],['5n_eu'],['10n_eu'],['1n_man'],['5n_man'],['10n_man']])
 
     advantage = np.zeros((stats_array_len, stats_array_len))
     advantage[t_statistic > 0] = 1
