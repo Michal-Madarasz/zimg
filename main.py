@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from scipy.stats import ttest_rel
+from scipy.stats import ttest_ind
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import RepeatedKFold
 from sklearn.neighbors import KNeighborsClassifier
@@ -8,7 +8,7 @@ from tabulate import tabulate
 
 from names_dict import COLUMNS
 
-alfa = .05
+alpha = .05
 
 
 def rebuild_table(tmp_data):
@@ -23,6 +23,7 @@ if __name__ == '__main__':
     type_of_metric = ['euclidean', 'manhattan']
 
     rebuild_table(data)
+    # rozbicie na tabelę X (cechy 0/1) oraz y wynik 0/1
     X = data.iloc[:, :-1].values
     y = data.iloc[:, -1].values
 
@@ -34,13 +35,20 @@ if __name__ == '__main__':
         for neighbor in num_of_neighbours:
             clf = KNeighborsClassifier(n_neighbors=neighbor, metric=metric)
             scores = []
+            # split zwraca numery indeksów, próbek wybranych i podzielonych na
+            # podzbiory uczące oraz podzbiory testowe
             for train_index, test_index in rkf.split(X):
                 X_train, X_test = X[train_index], X[test_index]
                 y_train, y_test = y[train_index], y[test_index]
+                # uczymy klasyfikator
                 clf.fit(X_train, y_train)
+                # testowanie klasyfikatora
                 predict = clf.predict(X_test)
+                # accuracy_score - wyliczanie metryki dokładności
                 scores.append(accuracy_score(y_test, predict))
 
+            print('scores')
+            print(scores)
             mean_score = np.mean(scores)
             final_scores.append(scores)
             std_score = np.std(scores)
@@ -56,13 +64,18 @@ if __name__ == '__main__':
     t_statistic = np.zeros((stats_array_len, stats_array_len))
     p_value = np.zeros((stats_array_len, stats_array_len))
 
-    print(t_statistic)
-    print(p_value)
+    print(f"\nZbalansowanie danych: {np.unique(y, return_counts=True)}\n")
+
+
+    print('Final SCORES:\n')
     print(final_scores)
 
     for i in range(stats_array_len):
         for j in range(stats_array_len):
-            t_statistic[i, j], p_value[i, j] = ttest_rel(final_scores[i], final_scores[j], nan_policy='omit')
+            t_statistic[i, j], p_value[i, j] = ttest_ind(final_scores[i], final_scores[j])
+
+    # liczba wierszy odpowiada liczbie testowanych modeli
+    # liczba kolumn = liczba wyników uzyskanych w procesie walidacji
 
     headers = ['1n_eu','5n_eu','10n_eu','1n_man','5n_man','10n_man']
     names_column = np.array([['1n_eu'],['5n_eu'],['10n_eu'],['1n_man'],['5n_man'],['10n_man']])
