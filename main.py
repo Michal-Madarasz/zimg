@@ -1,12 +1,14 @@
 import pandas as pd
 import numpy as np
+from matplotlib import pyplot as plt
 from scipy.stats import ttest_ind
+from sklearn.feature_selection import SelectKBest, f_classif
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import RepeatedKFold
 from sklearn.neighbors import KNeighborsClassifier
 from tabulate import tabulate
 
-from names_dict import COLUMNS
+from names_dict import COLUMNS, FEATURES
 
 alpha = .05
 
@@ -19,10 +21,34 @@ def rebuild_table(tmp_data):
 
 if __name__ == '__main__':
     data = pd.read_csv('./data/prepared_data/diagnosis.csv', encoding='UTF-16')
+
     num_of_neighbours = [1, 5, 10]
     type_of_metric = ['euclidean', 'manhattan']
 
     rebuild_table(data)
+
+    print('Data after rebuild_table()')
+    print(data)
+
+    # --------------------------------------------------------------------
+
+    predictors = dict(FEATURES)
+    selector = SelectKBest(f_classif, k=3)
+    selector.fit_transform(data[predictors], data["Inflammation"])
+    scores2 = -np.log10(selector.pvalues_)
+
+    scores2.sort()
+    print('Ranking cech:')
+    print(scores2)
+
+    plt.figure(figsize=(12,6))
+    plt.axes([0.45, 0.35, 0.5, 0.5])
+    plt.barh(range(len(predictors)), scores2)
+    plt.yticks(range(len(predictors)), predictors.values())
+    plt.show()
+
+    # --------------------------------------------------------------------
+
     # rozbicie na tabelę X (cechy 0/1) oraz y wynik 0/1
     X = data.iloc[:, :-1].values
     y = data.iloc[:, -1].values
@@ -31,31 +57,36 @@ if __name__ == '__main__':
 
     final_scores = []
 
-    for metric in type_of_metric:
-        for neighbor in num_of_neighbours:
-            clf = KNeighborsClassifier(n_neighbors=neighbor, metric=metric)
-            scores = []
-            # split zwraca numery indeksów, próbek wybranych i podzielonych na
-            # podzbiory uczące oraz podzbiory testowe
-            for train_index, test_index in rkf.split(X):
-                X_train, X_test = X[train_index], X[test_index]
-                y_train, y_test = y[train_index], y[test_index]
-                # uczymy klasyfikator
-                clf.fit(X_train, y_train)
-                # testowanie klasyfikatora
-                predict = clf.predict(X_test)
-                # accuracy_score - wyliczanie metryki dokładności
-                scores.append(accuracy_score(y_test, predict))
+    for features_index in range(0,6):
+        selected_features_count = features_index + 1
+        selected_data = selector.fit_transform(X, y)
+        for metric in type_of_metric:
+            for neighbor in num_of_neighbours:
+                clf = KNeighborsClassifier(n_neighbors=neighbor, metric=metric)
+                scores = []
+                # split zwraca numery indeksów, próbek wybranych i podzielonych na
+                # podzbiory uczące oraz podzbiory testowe
+                for train_index, test_index in rkf.split(X):
+                    X_train, X_test = X[train_index], X[test_index]
+                    y_train, y_test = y[train_index], y[test_index]
+                    # uczymy klasyfikator
+                    clf.fit(X_train, y_train)
+                    # testowanie klasyfikatora
+                    predict = clf.predict(X_test)
+                    # accuracy_score - wyliczanie metryki dokładności
+                    scores.append(accuracy_score(y_test, predict))
 
-            print('scores')
-            print(scores)
-            mean_score = np.mean(scores)
-            final_scores.append(scores)
-            std_score = np.std(scores)
-            print(f"Miara odległości: {metric}")
-            print(f"Liczba najbliższych sąsiadów: {neighbor}")
-            print(f"Średnia jakość {mean_score:.3f}")
-            print(f"Odchylenie standardowe jakości {std_score:.3f}")
+                print('--------------------------------------')
+                print('Wyniki:')
+                print(scores)
+                mean_score = np.mean(scores)
+                final_scores.append(scores)
+                std_score = np.std(scores)
+                print(f"Liczba cech: {selected_features_count}")
+                print(f"Miara odległości: {metric}")
+                print(f"Liczba najbliższych sąsiadów: {neighbor}")
+                print(f"Średnia jakość {mean_score:.3f}")
+                print(f"Odchylenie standardowe jakości {std_score:.3f}")
 
     # np.save('results', final_scores)
 
