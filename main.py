@@ -22,7 +22,7 @@ def rebuild_table(tmp_data):
 if __name__ == '__main__':
     data = pd.read_csv('./data/prepared_data/diagnosis.csv', encoding='UTF-16')
 
-    num_of_neighbours = [1, 5, 10]
+    num_of_neighbours = [1, 5, 9]
     type_of_metric = ['euclidean', 'manhattan']
 
     rebuild_table(data)
@@ -62,18 +62,19 @@ if __name__ == '__main__':
         selected_data = selector.fit_transform(X, y)
         for metric in type_of_metric:
             for neighbor in num_of_neighbours:
-                clf = KNeighborsClassifier(n_neighbors=neighbor, metric=metric)
+
                 scores = []
                 # split zwraca numery indeksów, próbek wybranych i podzielonych na
                 # podzbiory uczące oraz podzbiory testowe
                 for train_index, test_index in rkf.split(X):
+                    clf = KNeighborsClassifier(n_neighbors=neighbor, metric=metric)
                     X_train, X_test = X[train_index], X[test_index]
                     y_train, y_test = y[train_index], y[test_index]
                     # uczymy klasyfikator
                     clf.fit(X_train, y_train)
                     # testowanie klasyfikatora
                     predict = clf.predict(X_test)
-                    # accuracy_score - wyliczanie metryki dokładności
+                    # accuracy_score - wynzaczanie jakości modelu ->wyliczanie metryki dokładności
                     scores.append(accuracy_score(y_test, predict))
 
                 print('--------------------------------------')
